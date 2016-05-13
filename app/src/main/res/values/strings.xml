@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">BearBasket</string>
+    <string name="action_settings">Настроки</string>
+    <string name="main_title">Списки</string>
+    <string name="title_activity_basket_list">Список</string>
+    <string name="menu_item_edit_title">Изменить</string>
+    <string name="menu_item_del_title">Удалить</string>
+    <string name="title_activity_sales_info">Акции в магазинах</string>
+    <string name="menu_item_clock">Напоминание</string>
+</resources>
