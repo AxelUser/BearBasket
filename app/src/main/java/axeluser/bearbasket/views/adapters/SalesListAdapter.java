@@ -1,4 +1,4 @@
-package axeluser.bearbasket;
+package axeluser.bearbasket.views.adapters;
 
 import android.app.Activity;
 import android.content.Context;
@@ -10,7 +10,8 @@ import android.widget.TextView;
 
 import java.util.List;
 
-import axeluser.bearbasket.DbUtils.Entities.SaleInfo;
+import axeluser.bearbasket.database.models.SaleInfo;
+import axeluser.bearbasket.R;
 
 /**
  * Created by Alexey on 28.02.2016.

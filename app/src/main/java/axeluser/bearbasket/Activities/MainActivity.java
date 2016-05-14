@@ -1,11 +1,10 @@
-package axeluser.bearbasket.Activities;
+package axeluser.bearbasket.activities;
 
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
@@ -17,22 +16,23 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import java.util.Comparator;
-import java.util.List;
+import java.util.Date;
+import java.util.UUID;
 
 import axeluser.bearbasket.R;
-import axeluser.bearbasket.DbUtils.DbHelper;
-import axeluser.bearbasket.DbUtils.DbManager;
-import axeluser.bearbasket.DbUtils.Entities.BasketList;
+import axeluser.bearbasket.database.models.BasketList;
+import io.realm.Realm;
+import io.realm.RealmResults;
+import io.realm.Sort;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BearBasketActivityBase {
 
-    private DbManager dbManager;
     private ListView listView;
     private ArrayAdapter<BasketList> basketListArrayAdapter;
     private Comparator<BasketList> listComparator = new Comparator<BasketList>() {
         @Override
         public int compare(BasketList lhs, BasketList rhs) {
-            return lhs.getId()<=rhs.getId()?-1:1;
+            return lhs.getDate().compareTo(rhs.getDate());
         }
     };
 
@@ -51,17 +51,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        dbManager = new DbManager(this);
         listView = (ListView) findViewById(R.id.mainBasketList);
-        List<BasketList> list = dbManager.getAllLists();
-        updateListFromDb(dbManager);
+        updateListFromDb();
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(MainActivity.this, BasketListActivity.class);
-                long listId = basketListArrayAdapter.getItem(position).getId();
-                intent.putExtra(DbHelper.TableBasketItems.KEY_LIST_ID, listId);
+                String listId = basketListArrayAdapter.getItem(position).getId();
+                intent.putExtra("list_id", listId);
                 startActivity(intent);
             }
         });
@@ -89,17 +87,18 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void updateListFromDb(DbManager db){
-        List<BasketList> list = db.getAllLists();
+    private void updateListFromDb(){
+        RealmResults<BasketList> list = realm.where(BasketList.class)
+                .findAllSorted("date", Sort.DESCENDING);
         basketListArrayAdapter =
                 new ArrayAdapter<BasketList>(this, android.R.layout.simple_list_item_1, list);
+        //basketListArrayAdapter.sort(listComparator);
         listView.setAdapter(basketListArrayAdapter);
+
     }
 
     public void addList(BasketList list){
-        dbManager.createList(list);
         basketListArrayAdapter.add(list);
-        basketListArrayAdapter.sort(listComparator);
     }
 
     public void showAddListDialog(){
@@ -116,11 +115,16 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton("Добавить", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        BasketList list = new BasketList();
+
                         String name = input.getText().toString();
                         if(!name.isEmpty()){
+                            realm.beginTransaction();
+                            BasketList list = realm.createObject(BasketList.class);
+                            list.setId(UUID.randomUUID().toString());
+                            list.setDate(new Date());
                             list.setName(name);
-                            addList(list);
+                            realm.commitTransaction();
+                            //addList(list);
                         }
                     }
                 })
@@ -136,6 +140,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        updateListFromDb(dbManager);
+        updateListFromDb();
     }
 }

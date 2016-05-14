@@ -1,4 +1,4 @@
-package axeluser.bearbasket.DbUtils.Entities;
+package axeluser.bearbasket.database.models;
 
 /**
  * Created by Alexey on 28.02.2016.

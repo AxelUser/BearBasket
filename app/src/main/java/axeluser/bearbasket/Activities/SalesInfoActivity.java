@@ -1,17 +1,16 @@
-package axeluser.bearbasket.Activities;
+package axeluser.bearbasket.activities;
 
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 
 import axeluser.bearbasket.R;
-import axeluser.bearbasket.SalesListAdapter;
-import axeluser.bearbasket.DbUtils.Entities.SaleInfo;
+import axeluser.bearbasket.views.adapters.SalesListAdapter;
+import axeluser.bearbasket.database.models.SaleInfo;
 
-public class SalesInfoActivity extends AppCompatActivity {
+public class SalesInfoActivity extends BearBasketActivityBase {
     private SalesListAdapter salesListAdapter;
 
     @Override

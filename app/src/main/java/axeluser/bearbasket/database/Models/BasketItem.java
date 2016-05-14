@@ -1,27 +1,28 @@
-package axeluser.bearbasket.DbUtils.Entities;
+package axeluser.bearbasket.database.models;
 
 import java.util.Date;
 
 import io.realm.RealmObject;
+import io.realm.annotations.PrimaryKey;
 
 /**
  * Created by Alexey on 27.02.2016.
  */
 public class BasketItem extends RealmObject {
-    private long id;
+    private String id;
     private String name;
     private String count;
-    private long listId;
+    private BasketList list;
     private boolean checked;
     private boolean promotion;
     private Date creationDate;
     private Date checkingDate;
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -41,12 +42,12 @@ public class BasketItem extends RealmObject {
         this.count = count;
     }
 
-    public long getListId() {
-        return listId;
+    public BasketList getList() {
+        return list;
     }
 
-    public void setListId(long listId) {
-        this.listId = listId;
+    public void setList(BasketList listId) {
+        this.list = listId;
     }
 
     public boolean isChecked() {

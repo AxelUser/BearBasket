@@ -1,4 +1,4 @@
-package axeluser.bearbasket;
+package axeluser.bearbasket.views.adapters;
 
 import android.app.Activity;
 import android.content.Context;
@@ -16,20 +16,22 @@ import android.widget.Toast;
 import java.util.Date;
 import java.util.List;
 
-import axeluser.bearbasket.Activities.BasketListActivity;
-import axeluser.bearbasket.Activities.SalesInfoActivity;
-import axeluser.bearbasket.DbUtils.DbManager;
-import axeluser.bearbasket.DbUtils.Entities.BasketItem;
+import axeluser.bearbasket.activities.BasketListActivity;
+import axeluser.bearbasket.activities.SalesInfoActivity;
+import axeluser.bearbasket.database.models.BasketItem;
+import axeluser.bearbasket.R;
+import axeluser.bearbasket.views.interfaces.IBearBasketSortableView;
+import io.realm.Realm;
 
 /**
  * Created by Alexey on 28.02.2016.
  */
 public class BasketItemListAdapter extends ArrayAdapter<BasketItem> {
     private int selectedPosition = -1;
-    private BasketListActivity activity;
+    private IBearBasketSortableView activity;
     public BasketItemListAdapter(Context context, List<BasketItem> objects) {
         super(context, R.layout.list_view_row_basket_item, objects);
-        activity = (BasketListActivity) context;
+        activity = (IBearBasketSortableView) context;
     }
 
     public void selectItem(int selectedPosition){
@@ -41,8 +43,7 @@ public class BasketItemListAdapter extends ArrayAdapter<BasketItem> {
         selectItem(-1);
     }
 
-    @Override
-    public View getView(final int position, View convertView, ViewGroup parent) {
+    private View getDefaultRow(final int position, View convertView, ViewGroup parent){
         LayoutInflater inflater = ((Activity)getContext()).getLayoutInflater();
         View rowView = inflater.inflate(R.layout.list_view_row_basket_item, parent, false);
         final RelativeLayout listViewRowBase =
@@ -54,7 +55,6 @@ public class BasketItemListAdapter extends ArrayAdapter<BasketItem> {
         ImageView listViewRoBasketItemImageButtonSell =
                 (ImageView) rowView.findViewById(R.id.listViewRoBasketItemImageButtonSell);
         final BasketItem basketItem = getItem(position);
-        final DbManager dbManager = new DbManager(getContext());
 
         listViewRowBase.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -62,8 +62,7 @@ public class BasketItemListAdapter extends ArrayAdapter<BasketItem> {
                 if(selectedPosition<0) {
                     basketItem.setChecked(!basketItem.isChecked());
                     basketItem.setCheckingDate(new Date());
-                    dbManager.updateListItem(basketItem);
-                    activity.sortAdapter();
+                    //activity.sortAdapter();
                 } else {
                     clearSelection();
                     notifyDataSetChanged();
@@ -92,42 +91,6 @@ public class BasketItemListAdapter extends ArrayAdapter<BasketItem> {
         });
         listViewRoBasketItemImageButtonSell.setLongClickable(true);
 
-        if(selectedPosition == position){
-            rowView.setVisibility(View.GONE);
-            View editRowView =
-                    inflater.inflate(R.layout.list_view_row_basket_item_selected, parent, false);
-            RelativeLayout layoutEdit =
-                    (RelativeLayout) editRowView
-                            .findViewById(R.id.listViewRowEditBase);
-            TextView listViewRowEditBasketItemName
-                    = (TextView) editRowView.findViewById(R.id.listViewRowEditBasketItemName);
-            ImageView listViewRowEditBasketItemDeleteButton
-                    = (ImageView) editRowView.findViewById(R.id.listViewRowEditBasketItemDeleteButton);
-            listViewRowEditBasketItemName.setText(basketItem.getName());
-            listViewRowEditBasketItemDeleteButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    remove(basketItem);
-                    dbManager.deleteListItem(basketItem);
-                    clearSelection();
-                }
-            });
-            layoutEdit.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    clearSelection();
-                }
-            });
-            layoutEdit.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    clearSelection();
-                    return true;
-                }
-            });
-            return editRowView;
-        }
-
         if (!basketItem.isPromotion()){
             listViewRoBasketItemImageButtonSell.setImageAlpha(20);
         }
@@ -146,6 +109,57 @@ public class BasketItemListAdapter extends ArrayAdapter<BasketItem> {
             listViewRoBasketItemCount.setVisibility(View.GONE);
         }
         return rowView;
+    }
+
+    private View getSelectedRow(final int position, View convertView, ViewGroup parent){
+        //rowView.setVisibility(View.GONE);
+        LayoutInflater inflater = ((Activity)getContext()).getLayoutInflater();
+        View editRowView =
+                inflater.inflate(R.layout.list_view_row_basket_item_selected, parent, false);
+        RelativeLayout layoutEdit =
+                (RelativeLayout) editRowView
+                        .findViewById(R.id.listViewRowEditBase);
+        TextView listViewRowEditBasketItemName
+                = (TextView) editRowView.findViewById(R.id.listViewRowEditBasketItemName);
+        ImageView listViewRowEditBasketItemDeleteButton
+                = (ImageView) editRowView.findViewById(R.id.listViewRowEditBasketItemDeleteButton);
+        final BasketItem basketItem = getItem(position);
+        listViewRowEditBasketItemName.setText(basketItem.getName());
+        listViewRowEditBasketItemDeleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                remove(basketItem);
+                Realm realm = Realm.getDefaultInstance();
+                realm.beginTransaction();
+                basketItem.deleteFromRealm();
+                realm.commitTransaction();
+                //dbManager.deleteListItem(basketItem);
+                clearSelection();
+            }
+        });
+        layoutEdit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearSelection();
+            }
+        });
+        layoutEdit.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                clearSelection();
+                return true;
+            }
+        });
+        return editRowView;
+    }
+
+    @Override
+    public View getView(final int position, View convertView, ViewGroup parent) {
+        if(selectedPosition == position){
+            return getSelectedRow(position, convertView, parent);
+        } else {
+            return getDefaultRow(position, convertView, parent);
+        }
     }
 
 

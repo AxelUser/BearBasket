@@ -1,14 +1,13 @@
-package axeluser.bearbasket.Activities;
+package axeluser.bearbasket.activities;
 
 import android.app.Dialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.DialogInterface;
-import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.format.DateFormat;
 import android.view.ActionMode;
@@ -20,23 +19,22 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TimePicker;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 
-import axeluser.bearbasket.BasketItemListAdapter;
+import axeluser.bearbasket.views.adapters.BasketItemListAdapter;
 import axeluser.bearbasket.R;
-import axeluser.bearbasket.DbUtils.DbHelper;
-import axeluser.bearbasket.DbUtils.DbManager;
-import axeluser.bearbasket.DbUtils.Entities.BasketItem;
-import axeluser.bearbasket.DbUtils.Entities.BasketList;
+import axeluser.bearbasket.database.models.BasketItem;
+import axeluser.bearbasket.database.models.BasketList;
+import axeluser.bearbasket.views.interfaces.IBearBasketSortableView;
+import io.realm.Realm;
+import io.realm.RealmResults;
 
-public class BasketListActivity extends AppCompatActivity {
+public class BasketListActivity extends BearBasketActivityBase implements IBearBasketSortableView {
 
     private BasketList basketList;
     private BasketItem selectedItem = null;
-    private DbManager dbManager;
     private ListView listViewBasket;
     private BasketItemListAdapter basketItemListAdapter;
     private ActionMode mActionMode = null;
@@ -70,8 +68,9 @@ public class BasketListActivity extends AppCompatActivity {
         basketItemListAdapter.notifyDataSetChanged();
     }
 
+    @Override
     public void sortAdapter(){
-        basketItemListAdapter.sort(itemsComparator);
+        //basketItemListAdapter.sort(itemsComparator);
     }
 
     @Override
@@ -88,21 +87,26 @@ public class BasketListActivity extends AppCompatActivity {
                 newFragment.show(getSupportFragmentManager(), "timePicker");
                 return true;
             case R.id.menu_item_del:
-                AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
-                alertDialog.setMessage("Удалить список?")
-                        .setPositiveButton("Да", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dbManager.deleteList(basketList);
-                                finish();
-                            }
-                        })
-                        .create();
-                alertDialog.show();
+                deleteBasketListDialog(this, realm, basketList);
                 return true;
             default: return false;
         }
 
+    }
+
+    private void deleteBasketListDialog(Context context, final Realm realm, final BasketList basketList){
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        alertDialog.setMessage("Удалить список?")
+                .setPositiveButton("Да", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        basketList.getItems().deleteAllFromRealm();
+                        basketList.deleteFromRealm();
+                        finish();
+                    }
+                })
+                .create();
+        alertDialog.show();
     }
 
     @Override
@@ -119,24 +123,23 @@ public class BasketListActivity extends AppCompatActivity {
                 showAddItemDialog();
             }
         });
-        dbManager = new DbManager(this);
 
-        final long listId = getIntent().getLongExtra(DbHelper.TableBasketItems.KEY_LIST_ID, 0);
-        basketList = dbManager.getListById(listId);
+
+        final String listId = getIntent().getStringExtra("list_id");
+        //RealmResults<BasketList> realmResults = realm.where(BasketList.class).findAll();
+        basketList = realm.where(BasketList.class).equalTo("id", listId).findFirst();
         setTitle(basketList.getName());
 
         listViewBasket = (ListView) findViewById(R.id.listViewBasket);
-        ArrayList<BasketItem> basketItems = dbManager.getAllItemsForList(basketList);
-        basketItemListAdapter = new BasketItemListAdapter(this, basketItems);
+        basketItemListAdapter = new BasketItemListAdapter(this, basketList.getItems());
         listViewBasket.setAdapter(basketItemListAdapter);
         searchForSell();
     }
 
     public void addItem(BasketItem item){
-        dbManager.createListItem(item);
-        basketItemListAdapter.add(item);
+        //basketItemListAdapter.add(item);
         searchForSell();
-        sortAdapter();
+        //sortAdapter();
     }
 
     public void showAddItemDialog(){
@@ -153,18 +156,22 @@ public class BasketListActivity extends AppCompatActivity {
                 .setPositiveButton("Добавить", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        BasketItem list = new BasketItem();
                         String[] data = input.getText().toString().split(":");
                         String count = data.length==2?data[1].trim():"";
                         String name = data[0].trim();
-                        if(!name.isEmpty()){
-                            list.setName(name);
-                            list.setCount(count);
-                            list.setListId(basketList.getId());
-                            list.setCreationDate(new Date());
-                            list.setCheckingDate(new Date());
-                            addItem(list);
+                        if(!name.isEmpty()) {
+                            realm.beginTransaction();
+                            BasketItem item = realm.createObject(BasketItem.class);
+                            item.setName(name);
+                            item.setCount(count);
+                            item.setList(basketList);
+                            item.setCreationDate(new Date());
+                            item.setCheckingDate(new Date());
+                            basketList.getItems().add(item);
+                            realm.commitTransaction();
+                            addItem(item);
                         }
+
                     }
                 })
                 .setNegativeButton("Назад", new DialogInterface.OnClickListener() {
