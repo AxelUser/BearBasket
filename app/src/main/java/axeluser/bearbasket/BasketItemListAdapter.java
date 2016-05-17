@@ -16,8 +16,8 @@ import android.widget.Toast;
 import java.util.Date;
 import java.util.List;
 
-import axeluser.bearbasket.Activities.BasketListActivity;
-import axeluser.bearbasket.Activities.SalesInfoActivity;
+import axeluser.bearbasket.activities.BasketListActivity;
+import axeluser.bearbasket.activities.SalesInfoActivity;
 import axeluser.bearbasket.DbUtils.DbManager;
 import axeluser.bearbasket.DbUtils.Entities.BasketItem;
 

@@ -1,4 +1,4 @@
-package axeluser.bearbasket.Activities;
+package axeluser.bearbasket.activities;
 
 import android.content.DialogInterface;
 import android.content.Intent;

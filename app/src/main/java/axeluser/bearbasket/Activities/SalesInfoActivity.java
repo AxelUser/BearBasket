@@ -1,4 +1,4 @@
-package axeluser.bearbasket.Activities;
+package axeluser.bearbasket.activities;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;

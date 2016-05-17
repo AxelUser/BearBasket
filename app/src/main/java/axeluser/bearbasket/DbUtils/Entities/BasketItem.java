@@ -7,7 +7,7 @@ import io.realm.RealmObject;
 /**
  * Created by Alexey on 27.02.2016.
  */
-public class BasketItem extends RealmObject {
+public class BasketItem {
     private long id;
     private String name;
     private String count;
